@@ -4,7 +4,7 @@ import sys
 import vlc
 from PyQt5.QtWidgets import (QWidget, QPushButton, QApplication)
 
-class Example(QWidget):
+class Window(QWidget):
 
     def __init__(self):
 
@@ -26,5 +26,5 @@ class Example(QWidget):
 if __name__ == '__main__':
 
     app = QApplication(sys.argv)
-    ex = Example()
+    window = Window()
     sys.exit(app.exec_())
