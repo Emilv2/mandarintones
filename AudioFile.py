@@ -9,6 +9,7 @@ class AudioFile():
     def __init__(self):
         self.__filename = self.read_file()
         self.__audio = MediaPlayer(audio_dir + "/" + self.__filename)
+        self.play()
 
     def play(self):
         self.__audio.play()
