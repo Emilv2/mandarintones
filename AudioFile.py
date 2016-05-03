@@ -12,6 +12,7 @@ class AudioFile():
         self.play()
 
     def play(self):
+        self.__audio.stop()
         self.__audio.play()
 
     def check_answer(self, answer):
