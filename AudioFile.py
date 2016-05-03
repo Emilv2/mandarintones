@@ -22,5 +22,5 @@ class AudioFile():
         _, _, filenames = next(walk(audio_dir))
         return choice(filenames)
 
-
-
+    def __del__(self):
+        self.__audio.release()
