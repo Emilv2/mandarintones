@@ -16,7 +16,7 @@ class AudioFile():
         self.__audio.play()
 
     def check_answer(self, answer):
-        return answer == self.__filename.replace("_","")[:-4]
+        return answer == self.__filename.split("__")[0].replace("_","")
 
     def read_file(self):
         _, _, filenames = next(walk(audio_dir))
