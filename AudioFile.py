@@ -13,14 +13,14 @@ class AudioFile():
     play, check answer, ...
     """
     def __init__(self):
-        self.__filename = _read_file()
-        self.__audio = MediaPlayer(AUDIO_DIR + "/" + self.__filename)
+        self._filename = _read_file()
+        self._audio = MediaPlayer(AUDIO_DIR + "/" + self._filename)
         self.play()
 
     def play(self):
         """play the audio of the file"""
-        self.__audio.stop()
-        self.__audio.play()
+        self._audio.stop()
+        self._audio.play()
 
     def check_answer(self, answer):
         """
@@ -28,10 +28,10 @@ class AudioFile():
         The format should be sound + tone and no seperator between syllables
         ie shang4hai3
         """
-        return answer == self.__filename.split("__")[0].replace("_", "")
+        return answer == self._filename.split("__")[0].replace("_", "")
 
     def __del__(self):
-        self.__audio.release()
+        self._audio.release()
 
 def _read_file():
     """
