@@ -14,7 +14,7 @@ class AudioFile():
     """
     def __init__(self):
         self._filename = _read_file()
-        self._audio = MediaPlayer(AUDIO_DIR + "/" + self._filename)
+        self._audio = MediaPlayer(AUDIO_DIR + "/" + self.filename)
         self.play()
 
     def play(self):
@@ -32,6 +32,10 @@ class AudioFile():
 
     def __del__(self):
         self._audio.release()
+
+    @property
+    def filename(self):
+        return self._filename
 
 def _read_file():
     """
