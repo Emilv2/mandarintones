@@ -1,10 +1,12 @@
 """
 AudioFile class and all it's helper functions
 """
+import logging
 from os import walk
 from random import choice
 from vlc import MediaPlayer
 AUDIO_DIR = "audio"
+logger = logging.getLogger(__name__)
 
 class AudioFile():
     """
@@ -21,6 +23,7 @@ class AudioFile():
         """play the audio of the file"""
         self._audio.stop()
         self._audio.play()
+        logger.info('playing ' + self.filename)
 
     def check_answer(self, answer):
         """
