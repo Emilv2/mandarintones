@@ -12,6 +12,7 @@ from PyQt5.QtGui import QPainter, QColor, QFont, QKeySequence
 from PyQt5.QtCore import Qt
 
 from AudioFile import AudioFile
+from Stats import Stats
 
 class Window(QWidget):
 
@@ -63,13 +64,18 @@ class Window(QWidget):
         self.audiofile.play()
 
     def check(self):
-        if self.audiofile.check_answer(self.answerEdit.text()):
+        answer = self.answerEdit.text()
+        if self.audiofile.check_answer(answer):
             self.correct_nb +=1
             self.correct_nbLabel.setText(str(self.correct_nb))
             self.audiofile = AudioFile()
         else:
             self.wrong_nb +=1
             self.wrong_nbLabel.setText(str(self.wrong_nb))
+        _stats.add_stats(
+            answer,
+            self.audiofile.get_id(),
+        )
         self.answerEdit.clear()
 
 def setup_logging(
@@ -95,7 +101,7 @@ if __name__ == '__main__':
     setup_logging()
     logger = logging.getLogger(__name__)
     logger.info('mandarintones started')
-
+    _stats = Stats()
     app = QApplication(sys.argv)
     window = Window()
     sys.exit(app.exec_())

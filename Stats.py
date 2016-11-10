@@ -14,37 +14,85 @@ class Stats():
     def __init__(self):
         if not os.path.isfile(STATS_DB_FILE):
             self._create_stats_db()
-        self.__connection = sqlite3.connect(STATS_DB_FILE)
-        self.__cursor = self.__connection.cursor()
+        self._connection = sqlite3.connect(STATS_DB_FILE)
+        self._cursor = self._connection.cursor()
 
-
-    def add_stats(self, file_name, answer):
-        assert is_valid_file_name(file_name)
-        assert is_valid_answer(answer, file_name)
+    def add_stats(self, answer, file_id):
         now = datetime.datetime.now()
         try:
-            self.__cursor.execute('''insert into stats(ts, filename, answer)
-                values(?, ?, ?)''', (now, file_name, answer))
-            self.__connection.commit()
-            logger.debug("Added answer ({}, {}, {}) into database".format(now,
-                    file_name, answer))
+            self._cursor.execute('''
+            INSERT INTO stats(answer, ts, file_id)
+                values(?, ?, ?)''', (answer, now, file_id))
+            self._connection.commit()
+            logger.info(
+                "Added answer ({}, {}, {}) into database".format(
+                    answer, now, file_id)
+            )
         except:
-            logger.exception("Failed to add stats")
+            logger.error("Failed to add stats")
 
-    def stats_days(self, frm, to):
-        ts = datetime.datetime.now()
-#         assert type(frm) is datetime
-#         assert type(to) is datetime
-        return self.__cursor.execute('''select * from stats where :frm <= :ts
-                and :ts <= :to''',
-                {"frm": frm, "ts": ts, "to":to})
+    def add_file(self, audio_file):
+        try:
+            self._cursor.execute('''
+            INSERT INTO files(pinyin, file_id, extension)
+            VALUES(?, ?, ?)
+            ''', (
+                audio_file.get_pinyin(),
+                audio_file.get_id(),
+                audio_file.get_extension()))
+            logger.debug(
+                'new file {} added to database'.format(audio_file.filename)
+            )
+        except:
+            logger.exception(
+                'failed to add {} to database'.format(audio_file.filename),
+                exc_info=True
+                )
+
+
+    def get_random_file(self):
+        file = self._cursor.execute('''
+        SELECT *
+        FROM files
+        WHERE id IN (SELECTid FROM files ORDER BY RANDOM() LIMIT 1)
+        ''').fetchall()
+        return file[0] + "__" + file[1] + ".mp3"
+
+    def timerange(self, frm: datetime, to: datetime) -> list:
+        return self._cursor.execute('''
+        SELECT *
+        FROM stats
+        WHERE ts >= ? AND ts < ?
+        INNER JOIN files
+        ON files.file_id = stats.file_id
+        ''', (frm, to)).fetchall()
 
     def _create_stats_db(self):
-        self.__connection = sqlite3.connect(STATS_DB_FILE)
-        self.__cursor = self.__connection.cursor()
-        self.__cursor.execute('''CREATE TABLE stats(
-                ts timestamp, filename text, answer text)''')
-        logger.info("created new stats database {}".format(STATS_DB_FILE))
+        try:
+            self._connection = sqlite3.connect(STATS_DB_FILE)
+            self._cursor = self._connection.cursor()
+            self._cursor.execute("""
+            CREATE TABLE files(
+            pinyin TEXT,
+            file_id TEXT PRIMARY KEY,
+            extension TEXT
+            )
+            """)
+            self._cursor.execute("""
+            CREATE TABLE stats(
+            answer TEXT,
+            ts TIMESTAMP,
+            file_id TEXT,
+            FOREIGN KEY(file_id) REFERENCES files(file_id)
+            )
+            """)
+            self._connection.commit()
+            logger.info("created new stats database {}".format(STATS_DB_FILE))
+        except:
+            logger.error(
+                "failed to create new stats database {}".format(STATS_DB_FILE),
+                exc_info=True
+            )
 
 
 def is_valid_file_name(file_name):
