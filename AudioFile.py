@@ -33,6 +33,15 @@ class AudioFile():
         """
         return answer == self._filename.split("__")[0].replace("_", "")
 
+    def get_pinyin(self):
+        return self.filename.split("__")[0]
+
+    def get_id(self):
+        return self.filename.split("__")[1].rsplit(".", 1)[0]
+
+    def get_extension(self):
+        return self.filename.split("__")[1].rsplit(".", 1)[1]
+
     def __del__(self):
         self._audio.release()
 
