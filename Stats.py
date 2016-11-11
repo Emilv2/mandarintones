@@ -3,6 +3,7 @@ import sqlite3
 import datetime
 import logging
 import re
+import AudioFile
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +17,8 @@ class Stats():
             self._create_stats_db()
         self._connection = sqlite3.connect(STATS_DB_FILE)
         self._cursor = self._connection.cursor()
+        self._cursor.execute("""PRAGMA foreign_keys = ON""")
+        self.add_all_files(AudioFile.AUDIO_DIR)
 
     def add_stats(self, answer, file_id):
         now = datetime.datetime.now()
@@ -31,30 +34,45 @@ class Stats():
         except:
             logger.error("Failed to add stats")
 
-    def add_file(self, audio_file):
+    def add_file(self, filename):
+        pinyin = filename.split('__')[0]
+        file_id = filename.split('__')[1].rsplit('.', 1)[0]
+        extension = filename.split('__')[1].rsplit('.', 1)[1]
         try:
             self._cursor.execute('''
             INSERT INTO files(pinyin, file_id, extension)
             VALUES(?, ?, ?)
             ''', (
-                audio_file.get_pinyin(),
-                audio_file.get_id(),
-                audio_file.get_extension()))
+                pinyin,
+                file_id,
+                extension))
             logger.debug(
-                'new file {} added to database'.format(audio_file.filename)
+                'new file {} added to database'.format(filename)
             )
         except:
             logger.exception(
-                'failed to add {} to database'.format(audio_file.filename),
+                'failed to add {} to database'.format(filename),
                 exc_info=True
                 )
 
+    def add_all_files(self, directory):
+        _, _, filenames = next(os.walk(directory))
+        for filename in filenames:
+            exists = int(
+                self._cursor.execute("""
+                SELECT COUNT(1)
+                FROM files
+                WHERE file_id = ? 
+                """, (filename,)).fetchone()[0]
+                )
+            if exists == 0:
+                self.add_file(filename)
 
     def get_random_file(self):
         file = self._cursor.execute('''
         SELECT *
         FROM files
-        WHERE id IN (SELECTid FROM files ORDER BY RANDOM() LIMIT 1)
+        WHERE file_id IN (SELECT file_id FROM files ORDER BY RANDOM()) LIMIT 1)
         ''').fetchall()
         return file[0] + "__" + file[1] + ".mp3"
 
@@ -73,16 +91,16 @@ class Stats():
             self._cursor = self._connection.cursor()
             self._cursor.execute("""
             CREATE TABLE files(
-            pinyin TEXT,
-            file_id TEXT PRIMARY KEY,
-            extension TEXT
+            pinyin TEXT NOT NULL,
+            file_id TEXT PRIMARY KEY NOT NULL,
+            extension TEXT NOT NULL
             )
             """)
             self._cursor.execute("""
             CREATE TABLE stats(
-            answer TEXT,
-            ts TIMESTAMP,
-            file_id TEXT,
+            answer TEXT NOT NULL,
+            ts TIMESTAMP NOT NULL,
+            file_id TEXT NOT NULL,
             FOREIGN KEY(file_id) REFERENCES files(file_id)
             )
             """)
