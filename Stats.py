@@ -20,19 +20,24 @@ class Stats():
         self._cursor.execute("""PRAGMA foreign_keys = ON""")
         self.add_all_files(AudioFile.AUDIO_DIR)
 
-    def add_stats(self, answer, file_id):
+    def add_stats(self, answer, pinyin, file_id):
         now = datetime.datetime.now()
         try:
             self._cursor.execute('''
-            INSERT INTO stats(answer, ts, file_id)
-                values(?, ?, ?)''', (answer, now, file_id))
+            INSERT INTO stats(answer, ts, pinyin, file_id)
+                values(?, ?, ?, ?)''', (answer, now, pinyin, file_id))
             self._connection.commit()
             logger.info(
-                "Added answer ({}, {}, {}) into database".format(
-                    answer, now, file_id)
+                "Added answer ({}, {}, {}, {}) into database".format(
+                    answer, now, pinyin, file_id)
             )
         except:
-            logger.error("Failed to add stats")
+            logger.error(
+                "Failed to add stats",
+                exc_info=True
+                )
+            import debug; debug.debug_trace()
+
 
     def add_file(self, filename):
         pinyin = filename.split('__')[0]
@@ -58,12 +63,14 @@ class Stats():
     def add_all_files(self, directory):
         _, _, filenames = next(os.walk(directory))
         for filename in filenames:
+            pinyin = AudioFile.get_pinyin(filename)
+            file_id = AudioFile.get_id(filename)
             exists = int(
                 self._cursor.execute("""
                 SELECT COUNT(1)
                 FROM files
-                WHERE file_id = ? 
-                """, (filename,)).fetchone()[0]
+                WHERE pinyin = ? AND file_id = ?
+                """, (pinyin, file_id,)).fetchone()[0]
                 )
             if exists == 0:
                 self.add_file(filename)
@@ -72,8 +79,13 @@ class Stats():
         file = self._cursor.execute('''
         SELECT *
         FROM files
-        WHERE file_id IN (SELECT file_id FROM files ORDER BY RANDOM()) LIMIT 1)
-        ''').fetchall()
+        WHERE (file_id, pinyin) IN (
+            SELECT file_id, pinyin
+            FROM files
+            ORDER BY RANDOM()
+            LIMIT 1
+        )
+        ''').fetchall()[0]
         return file[0] + "__" + file[1] + ".mp3"
 
     def timerange(self, frm: datetime, to: datetime) -> list:
@@ -92,16 +104,18 @@ class Stats():
             self._cursor.execute("""
             CREATE TABLE files(
             pinyin TEXT NOT NULL,
-            file_id TEXT PRIMARY KEY NOT NULL,
-            extension TEXT NOT NULL
+            file_id TEXT NOT NULL,
+            extension TEXT NOT NULL,
+            PRIMARY KEY(pinyin, file_id)
             )
             """)
             self._cursor.execute("""
             CREATE TABLE stats(
             answer TEXT NOT NULL,
+            pinyin TEXT NOT NULL,
             ts TIMESTAMP NOT NULL,
             file_id TEXT NOT NULL,
-            FOREIGN KEY(file_id) REFERENCES files(file_id)
+            FOREIGN KEY(pinyin, file_id) REFERENCES files(pinyin, file_id)
             )
             """)
             self._connection.commit()

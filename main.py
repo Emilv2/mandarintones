@@ -74,6 +74,7 @@ class Window(QWidget):
             self.wrong_nbLabel.setText(str(self.wrong_nb))
         _stats.add_stats(
             answer,
+            self.audiofile.get_pinyin(),
             self.audiofile.get_id(),
         )
         self.answerEdit.clear()
