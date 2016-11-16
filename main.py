@@ -15,9 +15,11 @@ import PyQt5.QtQml
 
 class QtScoreInterface(PyQt5.QtCore.QObject):
 
-    @PyQt5.QtCore.pyqtSlot()
+    @PyQt5.QtCore.pyqtSlot(result=str)
     def test(self):
-        return 5
+        print(5)
+        return '5'
+
 
 
 
