@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-
+import signal
 import sys
 import os
 import logging
@@ -63,6 +63,8 @@ def setup_logging(
         logging.basicConfig(level=default_level)
 
 if __name__ == '__main__':
+    # kill with ctrl-c
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
     setup_logging()
     logger = logging.getLogger(__name__)
     logger.info('mandarintones started')
